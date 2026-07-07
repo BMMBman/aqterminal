@@ -484,6 +484,18 @@
         margin-top: 18px;
       }
 
+      .import-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .import-card p {
+        margin: 6px 0 0;
+      }
+
       .fact {
         min-height: 68px;
         padding: 10px;
@@ -1186,6 +1198,7 @@
           <div class="top-actions">
             <button class="btn primary" type="button" data-toast="+ New Lead">+ New Lead</button>
             <button class="btn" type="button" data-toast="+ New Agent Touch">+ New Agent Touch</button>
+            <button class="btn" type="button" data-import-csv>Import CSV</button>
             <span class="status-pill"><span class="status-dot" aria-hidden="true"></span> Revenue Mode</span>
           </div>
         </header>
@@ -1205,28 +1218,7 @@
             <div class="scoreboard-layout">
               <div class="metric-grid" id="scoreboardCards"></div>
 
-              <article class="big-action" aria-labelledby="highest-value-title">
-                <div>
-                  <span class="label">Highest Value Action Today</span>
-                  <h2 id="highest-value-title">Call Investment Property Buyer</h2>
-                  <p>
-                    High loan amount, no touch in 10 days, and a possible $900K purchase. This is the cleanest revenue-producing
-                    conversation to create before noon.
-                  </p>
-                  <div class="action-facts">
-                    <div class="fact"><span class="label">Contact</span><b>Investment Property Buyer</b></div>
-                    <div class="fact"><span class="label">Reason It Matters</span><b>High-value scenario needs movement</b></div>
-                    <div class="fact"><span class="label">Suggested Action</span><b>Call, then send updated DSCR/payment options</b></div>
-                    <div class="fact"><span class="label">Potential Loan Amount</span><b>$720,000 est.</b></div>
-                    <div class="fact"><span class="label">Estimated Commission</span><b>$9,000 est.</b></div>
-                    <div class="fact"><span class="label">Priority Level</span><b><span class="priority high">High</span></b></div>
-                  </div>
-                </div>
-                <div class="button-row">
-                  <button class="btn primary" type="button" data-complete-target="highest-value-title">Mark Complete</button>
-                  <button class="btn" type="button" data-toast="Touch logged for Investment Property Buyer">Log Touch</button>
-                </div>
-              </article>
+              <article class="big-action" id="highestValueActionCard" aria-labelledby="highest-value-title"></article>
             </div>
           </section>
 
@@ -1271,6 +1263,7 @@
               </div>
               <span class="pill section-tag">Click Headers to Sort</span>
             </header>
+            <div id="csvImportPlaceholder"></div>
             <div class="table-wrap">
               <table>
                 <thead>
@@ -1447,338 +1440,24 @@
               </div>
               <span class="pill section-tag">API Ready</span>
             </header>
-            <div class="three-col">
-              <article class="panel-card">
-                <h3>Google Sheets</h3>
-                <p>Use a published Apps Script JSON endpoint or Google Sheets API to hydrate the dashboardData object.</p>
-              </article>
-              <article class="panel-card">
-                <h3>Firebase / Supabase</h3>
-                <p>Map borrowers, agents, touches, tasks, and notes into the same arrays used by renderDashboard(data).</p>
-              </article>
-              <article class="panel-card">
-                <h3>Market APIs</h3>
-                <p>Connect 10Y Treasury, mortgage rates, MRPI, and talking points to your AstravaQuant model outputs.</p>
-              </article>
-            </div>
+            <div class="three-col" id="integrationSettings"></div>
           </section>
         </main>
       </div>
     </div>
 
+    <script src="data.js"></script>
     <script>
       (function () {
+        var dashboardData = window.ASTRAVA_REVENUE_DATA;
+        if (!dashboardData) {
+          throw new Error("AstravaQuant data layer missing. Make sure data.js loads before index.html renderer script.");
+        }
+
         // LIVE DATA CONNECTION POINT:
-        // Replace this mock dashboardData object with an API response from Google Sheets,
-        // Firebase, Supabase, a CRM export, or an internal AstravaQuant backend.
-        // Keep the normalized shape stable so renderDashboard(data) can stay reusable.
-        var dashboardData = {
-          scoreboard: [
-            ["Hot Leads", "4", "High-intent borrowers who need action today.", "green"],
-            ["Follow-Ups Due Today", "12", "Borrowers, agents, files, and content touches.", "yellow"],
-            ["Active Pre-Approvals", "7", "Open pre-approvals that should be matched to listings.", "blue"],
-            ["Contracts in Process", "3", "Protect conditions, docs, deadlines, and lock decisions.", "green"],
-            ["Files at Risk", "1", "Inspection negotiation and borrower response risk.", "red"],
-            ["Expected Commission Pipeline", "$38.4K", "Mock gross commission across active opportunities.", "green"],
-            ["This Month Projected Commission", "$14.8K", "Weighted projection from likely closings.", "yellow"],
-            ["Closed Loans This Month", "2", "Closed and funded units for the current month.", "blue"]
-          ],
-          borrowers: [
-            {
-              borrower: "Megan",
-              agentSource: "Gina Hammer",
-              loanType: "Conventional",
-              purchasePrice: 215000,
-              loanAmount: 204250,
-              stage: "Shopping",
-              stageBoard: "Shopping",
-              lastContact: "Today",
-              nextAction: "Update payment scenario after showing",
-              priority: "High",
-              probability: 62,
-              estCommission: 2550,
-              status: "Needs call",
-              expectedCloseMonth: "August",
-              daysSinceContact: 0,
-              stageUrgency: 76,
-              referralValue: 90,
-              missingDocs: 20,
-              timeline: 64
-            },
-            {
-              borrower: "Alexis & Brett",
-              agentSource: "Direct",
-              loanType: "FHA",
-              purchasePrice: 172000,
-              loanAmount: 168885,
-              stage: "Pre-Approved",
-              stageBoard: "Pre-Approved",
-              lastContact: "2 days ago",
-              nextAction: "Ask if they want updated numbers on listings",
-              priority: "Medium",
-              probability: 58,
-              estCommission: 2110,
-              status: "Warm",
-              expectedCloseMonth: "September",
-              daysSinceContact: 2,
-              stageUrgency: 58,
-              referralValue: 45,
-              missingDocs: 15,
-              timeline: 42
-            },
-            {
-              borrower: "Investment Property Buyer",
-              agentSource: "Direct",
-              loanType: "Conventional",
-              purchasePrice: 900000,
-              loanAmount: 720000,
-              stage: "Scenario Review",
-              stageBoard: "Contacted",
-              lastContact: "10 days ago",
-              nextAction: "Call and send updated scenario",
-              priority: "High",
-              probability: 48,
-              estCommission: 9000,
-              status: "Overdue",
-              expectedCloseMonth: "October",
-              daysSinceContact: 10,
-              stageUrgency: 72,
-              referralValue: 58,
-              missingDocs: 40,
-              timeline: 48
-            },
-            {
-              borrower: "Nathaniel",
-              agentSource: "Agent Referral",
-              loanType: "Conventional 20yr",
-              purchasePrice: 425000,
-              loanAmount: 340000,
-              stage: "Contract Negotiation",
-              stageBoard: "Offer Accepted",
-              lastContact: "Yesterday",
-              nextAction: "Hold pending inspection negotiation",
-              priority: "Medium",
-              probability: 68,
-              estCommission: 4250,
-              status: "At Risk",
-              expectedCloseMonth: "August",
-              daysSinceContact: 1,
-              stageUrgency: 84,
-              referralValue: 72,
-              missingDocs: 30,
-              timeline: 78
-            },
-            {
-              borrower: "First Walk-In",
-              agentSource: "Branch",
-              loanType: "Conventional",
-              purchasePrice: 125000,
-              loanAmount: 118750,
-              stage: "Nurture",
-              stageBoard: "Lost / Nurture",
-              lastContact: "14 days ago",
-              nextAction: "Send first-time buyer checklist",
-              priority: "Low",
-              probability: 24,
-              estCommission: 1485,
-              status: "Nurture",
-              expectedCloseMonth: "Unknown",
-              daysSinceContact: 14,
-              stageUrgency: 28,
-              referralValue: 26,
-              missingDocs: 55,
-              timeline: 24
-            }
-          ],
-          moneyActions: [
-            ["Investment Property Buyer", "Borrower", "Follow up with high-value scenario", "No contact in 10 days and purchase could reach $900K.", "Very High", "9:00 AM", "Open"],
-            ["Megan", "Borrower", "Call with payment update", "Showing happened and the buyer needs current numbers.", "High", "10:00 AM", "Open"],
-            ["Alexis & Brett", "Borrower", "Text about updated listing numbers", "They are pre-approved and need a reason to re-engage.", "Medium", "11:30 AM", "Open"],
-            ["Gina Hammer", "Agent", "Send market note", "Active relationship with current buyer referral potential.", "High", "12:00 PM", "Open"],
-            ["Nathaniel File", "File", "Review inspection negotiation risk", "Deal can stall if the next move is unclear.", "High", "1:00 PM", "Watch"],
-            ["MRPI Update", "Content", "Post MRPI update", "Supports agent credibility and creates market-touch reason.", "Medium", "2:30 PM", "Draft"],
-            ["Agent Outreach", "Agent", "DM 5 agents with market insight", "Creates new conversations without waiting for inbound leads.", "Medium", "3:30 PM", "Open"]
-          ],
-          pipelineStages: [
-            "New Lead",
-            "Contacted",
-            "Application Started",
-            "Docs Needed",
-            "Pre-Approved",
-            "Shopping",
-            "Offer Accepted",
-            "In Process",
-            "Underwriting",
-            "Clear to Close",
-            "Closed",
-            "Lost / Nurture"
-          ],
-          agentMetrics: [
-            ["Active Agent Relationships", "10", "Current referral and nurture list."],
-            ["Agents Touched This Week", "6", "Touches logged through calls, texts, DMs, and notes."],
-            ["Referrals This Month", "4", "Borrower opportunities from agent channels."],
-            ["Agent Meetings Scheduled", "2", "Coffee, office visits, and one-on-ones."],
-            ["Open House Opportunities", "5", "Listings where payment support can help."],
-            ["Agent Spotlight Candidates", "3", "Potential BMMB / social features."]
-          ],
-          agents: [
-            ["Gina Hammer", "Tier 1", "Today", "After Megan update", "High", 2, 1, "Active buyer relationship.", "Call with payment scenario and ask what buyers need this week."],
-            ["Maria Ledyard", "Tier 2", "This week", "Send affordability note", "High", 1, 0, "Warm relationship.", "Send short local market note with one buyer talking point."],
-            ["Jake Mattoon", "Tier 2", "Last week", "Text open house support", "Medium", 1, 0, "Good listing opportunity.", "Offer payment scenarios for weekend traffic."],
-            ["Kerri Whetstone", "Tier 2", "Last week", "Market note check-in", "Medium", 0, 0, "Warm and practical.", "Ask what her buyers are stuck on right now."],
-            ["Trudi Moag", "Nurture", "2 weeks ago", "Invite BMMB feedback", "Medium", 0, 0, "Content loop opportunity.", "Ask what local data would help her buyers."],
-            ["Lindsay", "Nurture", "2 weeks ago", "DM buyer script", "Medium", 0, 0, "Social engagement opportunity.", "Send affordability script and ask if useful."],
-            ["Danielle", "Tier 3", "New", "Intro market note", "Medium", 0, 0, "New relationship.", "Lead with value and avoid hard pitch."],
-            ["Brigid", "Tier 3", "New", "Ask about active buyers", "Medium", 0, 0, "Payment scenario support.", "Offer fast pre-approval and payment clarity."],
-            ["Natalia", "Nurture", "This month", "Send BMMB issue", "Low", 0, 0, "Market intelligence fit.", "Ask for one buyer question she is hearing."],
-            ["Samantha", "Tier 3", "New", "Open house value note", "Medium", 0, 0, "Listing support.", "Offer a simple payment cheat sheet."]
-          ],
-          followUps: {
-            "Due Today": [
-              ["Megan", "Payment update after showing", "Today", "Hey Megan, just checking in after the showing. Want me to update the payment numbers based on where you're thinking?"]
-            ],
-            Overdue: [
-              ["Investment Property Buyer", "High-value scenario, no contact in 10 days", "10 days ago", "Wanted to circle back on the investment scenario. If the target range is still $500K-$900K, I can update the numbers and narrow down the strongest path."]
-            ],
-            "Waiting on Borrower": [
-              ["Alexis & Brett", "Listing and payment feedback", "2 days ago", "Want me to refresh the payment numbers on anything you are looking at this week?"]
-            ],
-            "Waiting on Agent": [
-              ["Gina Hammer", "Buyer showing feedback", "Today", "Hey Gina, quick market note for your buyers today - the 10Y is holding near key levels, so payment certainty still matters."]
-            ],
-            "Docs Needed": [
-              ["Nathaniel", "Inspection negotiation pending", "Yesterday", "I am holding tight while the inspection negotiation plays out. Once you have direction, I can help keep the financing timeline protected."]
-            ],
-            "Rate Update Needed": [
-              ["Pre-Approval List", "Rate-sensitive buyers", "This week", "Rates are still moving with the bond market. Want updated payment numbers before you tour or write anything?"]
-            ],
-            "Market Update Opportunity": [
-              ["Agent List", "Useful reason to touch agents", "Today", "Quick market note: buyers should focus on payment certainty, not trying to perfectly time the bottom."]
-            ]
-          },
-          forecastCards: [
-            ["Current Month Projected Commission", "$14.8K", "Weighted from files likely to close this month."],
-            ["Next Month Projected Commission", "$11.6K", "Pre-approvals and contracts likely to convert."],
-            ["90-Day Pipeline", "$38.4K", "Gross potential across active opportunities."],
-            ["Weighted Pipeline", "$18.9K", "Probability-adjusted commission forecast."],
-            ["Best Case", "$42.7K", "If high-value opportunities convert."],
-            ["Base Case", "$18.9K", "Current weighted expectation."],
-            ["Conservative Case", "$9.4K", "Risk-adjusted lower bound."]
-          ],
-          activity: [
-            ["Calls Made", 2, 5],
-            ["Agent Texts", 3, 5],
-            ["Borrower Follow-Ups", 4, 5],
-            ["Applications Started", 1, 2],
-            ["Pre-Approvals Sent", 1, 2],
-            ["Agent Meetings Booked", 0, 1],
-            ["Open Houses Attended", 0, 1],
-            ["Market Notes Sent", 1, 1],
-            ["Social Posts Published", 0, 1],
-            ["Pipeline Review", 1, 1]
-          ],
-          market: [
-            ["10Y Treasury", "4.28%", "Still the core driver for mortgage rate conversation.", ""],
-            ["30Y Mortgage Rate", "6.86%", "Placeholder average for borrower payment examples.", ""],
-            ["MRPI Score", "-0.67", "Model suggests mortgage pressure leans toward caution.", ""],
-            ["MRPI Regime", "Lean Lock", "Do not promise rate relief. Protect payment certainty.", ""],
-            ["Lock / Float Bias", "Lean Lock", "If payment works and closing is near, protect the deal.", ""],
-            ["Key Rate Level", "4.25% 10Y", "Watch whether Treasury breaks or rejects this level.", ""],
-            [
-              "Today's Agent Talking Point",
-              "Certainty matters",
-              "Rates are still moving with the 10Y Treasury. If your buyer likes the payment, certainty matters more than trying to perfectly time the market.",
-              "talking-point"
-            ],
-            [
-              "Today's Borrower Talking Point",
-              "Protect the deal",
-              "The goal is not guessing the bottom. The goal is knowing the payment and protecting the deal.",
-              "talking-point"
-            ]
-          ],
-          bmmbCards: [
-            ["This Week's Brief Status", "Drafting", "Macro and mortgage sections need final edits."],
-            ["Agent Spotlight", "3 candidates", "Pick one relationship to feature or support."],
-            ["Market Update Draft", "MRPI angle", "Turn model insight into agent-facing language."],
-            ["Social Post Needed", "1:1 post", "Use one practical buyer payment talking point."],
-            ["Agents to Send Brief To", "24", "Prioritize Tier 1 and Tier 2 relationships."],
-            ["New Subscribers", "7", "Track agent and buyer list growth."],
-            ["Replies / Engagement", "4", "Follow up with any agent who replies."],
-            ["Referral Opportunities Created", "2", "Content should create conversations, not impressions."]
-          ],
-          bmmbPlan: {
-            topic: "Payment certainty while affordability pressure stays high",
-            audience: "Buffalo-area agents with active buyers",
-            purpose: "Create useful agent conversations and referral opportunities",
-            cta: "Reply with one buyer scenario and I will send updated payment numbers",
-            followUp: "Gina Hammer, Maria Ledyard, Jake Mattoon, Kerri Whetstone, Trudi Moag"
-          },
-          bmmbChecklist: [
-            "Finalize macro section",
-            "Finalize mortgage rate section",
-            "Add Erie County housing note",
-            "Add Niagara County housing note",
-            "Write agent-facing takeaway",
-            "Create 1:1 social post",
-            "Publish Beehiiv",
-            "Post Instagram/Facebook",
-            "Send to agent list",
-            "Log replies and referral opportunities"
-          ],
-          calendar: [
-            ["Closings", [["Aug 12", "Nathaniel target closing window"], ["Aug 29", "Projected file in process closing"]]],
-            ["Contract Deadlines", [["Today", "Inspection negotiation follow-up"], ["Fri", "Updated condition check"]]],
-            ["Inspections", [["Pending", "Nathaniel inspection negotiation"], ["Sat", "Possible buyer walkthrough"]]],
-            ["Rate Lock Expirations", [["Aug 4", "File in process lock review"], ["Aug 18", "Rate update needed"]]],
-            ["Appointments", [["9:00 AM", "Investment buyer call"], ["2:00 PM", "Pre-approval review block"]]],
-            ["Agent Meetings", [["Thu", "Maria market coffee"], ["Next Tue", "Jake open house recap"]]],
-            ["Open Houses", [["Weekend", "Review 5 local opportunities"], ["Sun", "Send payment scenarios"]]],
-            ["Newsletter Deadlines", [["Wed", "BMMB draft"], ["Fri", "Publish and send"]]],
-            ["Bills / Subscriptions", [["This week", "Software subscriptions"], ["Month end", "Ad spend review"]]]
-          ],
-          finance: [
-            ["Bills Due This Week", "$1,240", "Mock personal and business obligations."],
-            ["Business Expenses", "$2,850", "Monthly operating cost estimate."],
-            ["Ad Spend", "$450", "Current monthly placeholder."],
-            ["Software Subscriptions", "$610", "CRM, hosting, research, design, and publishing tools."],
-            ["Commission Income Expected", "$14,800", "Projected current month gross commission."],
-            ["Monthly Cash Gap / Surplus", "+$5,650", "Placeholder surplus after tracked obligations."]
-          ],
-          quickLinks: [
-            ["Gmail", "https://mail.google.com/"],
-            ["Google Calendar", "https://calendar.google.com/"],
-            ["Google Sheets", "https://docs.google.com/spreadsheets/"],
-            ["Beehiiv", "https://app.beehiiv.com/"],
-            ["GitHub", "https://github.com/"],
-            ["Vercel", "https://vercel.com/dashboard"],
-            ["Firebase", "https://console.firebase.google.com/"],
-            ["Encompass", "#"],
-            ["HUNT Mortgage", "#"],
-            ["TradingView", "https://www.tradingview.com/"],
-            ["FRED", "https://fred.stlouisfed.org/"],
-            ["Mortgage News Daily", "https://www.mortgagenewsdaily.com/"],
-            ["Buffalo Mortgage Market Brief", "#"],
-            ["AstravaQuant Public Site", "#"]
-          ],
-          notes: ["Today's notes", "Borrower notes", "Agent notes", "Content ideas", "Market observations", "Follow-up ideas"],
-          activityFeed: [
-            ["8:42 AM", "Called Megan"],
-            ["9:05 AM", "Sent Gina market note"],
-            ["9:28 AM", "Updated MRPI"],
-            ["10:15 AM", "Added agent follow-up"],
-            ["11:00 AM", "Published BMMB post"]
-          ]
-        };
-
-        // Integration example:
-        // async function loadLiveDashboardData() {
-        //   const response = await fetch("/api/revenue-command-center");
-        //   return response.json();
-        // }
-        // Google Sheets option: use Apps Script to return JSON, then normalize rows into this dashboardData shape.
-        // Firebase/Supabase option: subscribe to borrowers, agents, follow_ups, touches, tasks, and market_signals tables.
-
+        // data.js currently exposes mock arrays on window.ASTRAVA_REVENUE_DATA.
+        // Replace those mock arrays later with normalized Google Sheets, CSV import,
+        // Firebase, Supabase, Gmail, Google Calendar, or Encompass-derived data.
         var borrowerColumns = [
           ["borrower", "Borrower"],
           ["agentSource", "Agent Source"],
@@ -1843,6 +1522,315 @@
           );
         }
 
+        function numberFromCsv(value) {
+          var cleaned = String(value || "").replace(/[$,%\s]/g, "").replace(/,/g, "");
+          var number = Number(cleaned);
+          return Number.isFinite(number) ? number : 0;
+        }
+
+        function parseCsv(text) {
+          var rows = [];
+          var row = [];
+          var cell = "";
+          var inQuotes = false;
+          var firstLine = String(text || "").split(/\r?\n/)[0] || "";
+          var delimiter = firstLine.indexOf("\t") >= 0 ? "\t" : ",";
+
+          for (var index = 0; index < text.length; index += 1) {
+            var char = text[index];
+            var next = text[index + 1];
+
+            if (char === '"' && inQuotes && next === '"') {
+              cell += '"';
+              index += 1;
+            } else if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === delimiter && !inQuotes) {
+              row.push(cell);
+              cell = "";
+            } else if ((char === "\n" || char === "\r") && !inQuotes) {
+              if (char === "\r" && next === "\n") index += 1;
+              row.push(cell);
+              if (row.some(function (value) { return value.trim() !== ""; })) rows.push(row);
+              row = [];
+              cell = "";
+            } else {
+              cell += char;
+            }
+          }
+
+          row.push(cell);
+          if (row.some(function (value) { return value.trim() !== ""; })) rows.push(row);
+          return rows;
+        }
+
+        function csvToObjects(text) {
+          var rows = parseCsv(text);
+          if (rows.length < 2) return [];
+          var headers = rows[0].map(function (header) { return header.trim(); });
+          return rows.slice(1).map(function (row) {
+            return headers.reduce(function (record, header, index) {
+              record[header] = (row[index] || "").trim();
+              return record;
+            }, {});
+          });
+        }
+
+        function stageBoardFromCsv(stage) {
+          var normalized = String(stage || "").trim();
+          if (dashboardData.pipelineStages.indexOf(normalized) >= 0) return normalized;
+          if (/processing|process/i.test(normalized)) return "In Process";
+          if (/contract|negotiation/i.test(normalized)) return "Offer Accepted";
+          if (/scenario|contact/i.test(normalized)) return "Contacted";
+          if (/nurture|lost/i.test(normalized)) return "Lost / Nurture";
+          if (/pre/i.test(normalized)) return "Pre-Approved";
+          return "New Lead";
+        }
+
+        function parsePipelineDate(value) {
+          var text = String(value || "").trim();
+          if (!text) return null;
+
+          var monthMap = {
+            jan: 0,
+            feb: 1,
+            mar: 2,
+            apr: 3,
+            may: 4,
+            jun: 5,
+            jul: 6,
+            aug: 7,
+            sep: 8,
+            oct: 9,
+            nov: 10,
+            dec: 11
+          };
+          var shortMatch = text.match(/^(\d{1,2})[-\s]([a-z]{3,})$/i);
+          if (shortMatch) {
+            var shortMonth = monthMap[shortMatch[2].slice(0, 3).toLowerCase()];
+            if (shortMonth !== undefined) return new Date(new Date().getFullYear(), shortMonth, Number(shortMatch[1]), 12, 0, 0, 0);
+          }
+
+          var slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+          if (slashMatch) {
+            var year = Number(slashMatch[3]);
+            if (year < 100) year += 2000;
+            return new Date(year, Number(slashMatch[1]) - 1, Number(slashMatch[2]), 12, 0, 0, 0);
+          }
+
+          var parsed = new Date(text);
+          if (Number.isNaN(parsed.getTime())) return null;
+          parsed.setHours(12, 0, 0, 0);
+          return parsed;
+        }
+
+        function daysSinceLastContact(value) {
+          var text = String(value || "").toLowerCase();
+          var match = text.match(/(\d+)\s+days?/);
+          if (text === "today") return 0;
+          if (text === "yesterday") return 1;
+          if (match) return Number(match[1]);
+          var contactDate = parsePipelineDate(value);
+          if (contactDate) {
+            var today = new Date();
+            today.setHours(12, 0, 0, 0);
+            return Math.max(0, Math.round((today - contactDate) / 86400000));
+          }
+          return 0;
+        }
+
+        function stageUrgencyFor(stage) {
+          var urgency = {
+            "New Lead": 68,
+            Contacted: 62,
+            "Application Started": 70,
+            "Docs Needed": 82,
+            "Pre-Approved": 58,
+            Shopping: 64,
+            "Offer Accepted": 84,
+            "In Process": 78,
+            Underwriting: 86,
+            "Clear to Close": 90,
+            Closed: 10,
+            "Lost / Nurture": 24
+          };
+          return urgency[stageBoardFromCsv(stage)] || 50;
+        }
+
+        function timelineFromDueDate(value) {
+          if (!value) return 40;
+          var due = parsePipelineDate(value);
+          if (!due) return 45;
+          var today = new Date();
+          today.setHours(12, 0, 0, 0);
+          var days = Math.ceil((due - today) / 86400000);
+          if (days <= 0) return 92;
+          if (days <= 2) return 82;
+          if (days <= 7) return 64;
+          if (days <= 21) return 46;
+          return 30;
+        }
+
+        function expectedCloseMonthFromDueDate(value) {
+          var due = parsePipelineDate(value);
+          if (!due) return "Unknown";
+          return new Intl.DateTimeFormat("en-US", { month: "long" }).format(due);
+        }
+
+        function normalizeCsvBorrowers(text) {
+          return csvToObjects(text)
+            .filter(function (row) { return row.Name; })
+            .map(function (row) {
+              var stageBoard = stageBoardFromCsv(row.Stage);
+              var status = row.Status || "Open";
+              return {
+                borrower: row.Name,
+                agentSource: row.Agent || "Direct",
+                loanType: row.LoanType || "TBD",
+                purchasePrice: numberFromCsv(row.PurchasePrice),
+                loanAmount: numberFromCsv(row.LoanAmount),
+                stage: row.Stage || stageBoard,
+                stageBoard: stageBoard,
+                lastContact: row.LastContact || "Unknown",
+                nextAction: row.NextAction || "Define next action",
+                dueDate: row.DueDate || "",
+                priority: row.Priority || "Medium",
+                probability: numberFromCsv(row.Probability),
+                estCommission: numberFromCsv(row.EstimatedCommission),
+                status: status,
+                notes: row.Notes || "",
+                expectedCloseMonth: expectedCloseMonthFromDueDate(row.DueDate),
+                daysSinceContact: daysSinceLastContact(row.LastContact),
+                stageUrgency: stageUrgencyFor(row.Stage),
+                referralValue: row.Agent && row.Agent !== "Direct" ? 72 : 48,
+                missingDocs: /doc|missing|needed/i.test(status + " " + row.NextAction + " " + row.Notes) ? 65 : 20,
+                timeline: timelineFromDueDate(row.DueDate)
+              };
+            });
+        }
+
+        function sum(items, mapper) {
+          return items.reduce(function (total, item) { return total + mapper(item); }, 0);
+        }
+
+        function buildScoreboardFromBorrowers(borrowers, sourceLabel) {
+          var hot = borrowers.filter(function (borrower) { return borrower.priority === "High"; }).length;
+          var due = borrowers.filter(function (borrower) { return timelineFromDueDate(borrower.dueDate) >= 82; }).length;
+          var preApproved = borrowers.filter(function (borrower) { return /pre/i.test(borrower.stage); }).length;
+          var contracts = borrowers.filter(function (borrower) { return /contract|offer|process|underwriting|clear/i.test(borrower.stage + " " + borrower.stageBoard); }).length;
+          var risk = borrowers.filter(function (borrower) { return /risk|overdue/i.test(borrower.status); }).length;
+          var pipeline = sum(borrowers, function (borrower) { return borrower.estCommission; });
+          var weighted = sum(borrowers, function (borrower) { return borrower.estCommission * (borrower.probability / 100); });
+          var closed = borrowers.filter(function (borrower) { return /closed/i.test(borrower.stage); }).length;
+
+          return [
+            ["Hot Leads", String(hot), "High-priority borrowers from " + sourceLabel + ".", "green"],
+            ["Follow-Ups Due Today", String(due), "CSV rows due now or inside the urgent window.", "yellow"],
+            ["Active Pre-Approvals", String(preApproved), "Borrowers currently marked pre-approved.", "blue"],
+            ["Contracts in Process", String(contracts), "Contract, offer, process, underwriting, and CTC stages.", "green"],
+            ["Files at Risk", String(risk), "Rows marked overdue or at risk.", "red"],
+            ["Expected Commission Pipeline", currency(pipeline), "Gross commission from CSV pipeline.", "green"],
+            ["This Month Projected Commission", currency(weighted), "Probability-weighted CSV projection.", "yellow"],
+            ["Closed Loans This Month", String(closed), "CSV rows marked closed.", "blue"]
+          ];
+        }
+
+        function buildForecastCardsFromBorrowers(borrowers) {
+          var pipeline = sum(borrowers, function (borrower) { return borrower.estCommission; });
+          var weighted = sum(borrowers, function (borrower) { return borrower.estCommission * (borrower.probability / 100); });
+          return [
+            ["Current Month Projected Commission", currency(weighted), "Weighted from the currently loaded CSV pipeline."],
+            ["Next Month Projected Commission", currency(weighted * 0.72), "Placeholder split from active CSV opportunities."],
+            ["90-Day Pipeline", currency(pipeline), "Gross potential across loaded opportunities."],
+            ["Weighted Pipeline", currency(weighted), "Probability-adjusted commission forecast."],
+            ["Best Case", currency(pipeline), "If active CSV opportunities convert."],
+            ["Base Case", currency(weighted), "Current weighted expectation."],
+            ["Conservative Case", currency(weighted * 0.5), "Risk-adjusted lower bound."]
+          ];
+        }
+
+        function buildHighestValueActionFromBorrowers(borrowers) {
+          var top = borrowers
+            .slice()
+            .sort(function (a, b) { return calculatePriorityScore(b) - calculatePriorityScore(a); })[0];
+          if (!top) return dashboardData.highestValueAction;
+          return {
+            title: top.nextAction,
+            summary:
+              top.borrower +
+              " is the top Revenue Priority Score from the loaded CSV. Stage: " +
+              top.stage +
+              ". Status: " +
+              top.status +
+              ".",
+            contact: top.borrower,
+            reason: "Highest current Revenue Priority Score",
+            suggestedAction: top.nextAction,
+            potentialLoanAmount: currency(top.loanAmount),
+            estimatedCommission: currency(top.estCommission),
+            priority: top.priority,
+            logMessage: "Touch logged for " + top.borrower
+          };
+        }
+
+        function buildMoneyActionsFromBorrowers(borrowers) {
+          return borrowers
+            .slice()
+            .sort(function (a, b) { return calculatePriorityScore(b) - calculatePriorityScore(a); })
+            .slice(0, 7)
+            .map(function (borrower) {
+              var impact = borrower.estCommission >= 6000 ? "Very High" : borrower.estCommission >= 3000 ? "High" : "Medium";
+              return [
+                borrower.borrower,
+                "Borrower",
+                borrower.nextAction,
+                borrower.status + " / " + borrower.stage,
+                impact,
+                borrower.dueDate || "Today",
+                borrower.priority
+              ];
+            });
+        }
+
+        function applyCsvBorrowers(borrowers, sourceLabel) {
+          dashboardData = Object.assign({}, dashboardData, {
+            borrowers: borrowers,
+            scoreboard: buildScoreboardFromBorrowers(borrowers, sourceLabel),
+            forecastCards: buildForecastCardsFromBorrowers(borrowers),
+            highestValueAction: buildHighestValueActionFromBorrowers(borrowers),
+            moneyActions: buildMoneyActionsFromBorrowers(borrowers)
+          });
+          renderDashboard(dashboardData);
+          updateCsvStatus("Pipeline source: " + sourceLabel + " loaded (" + borrowers.length + " rows).");
+        }
+
+        function updateCsvStatus(message) {
+          var status = document.getElementById("csvImportStatus");
+          if (status) status.textContent = message;
+        }
+
+        async function tryAutoLoadCsv() {
+          if (!dashboardData.importCsv.autoLoad || !window.fetch) return;
+          var source = dashboardData.importCsv.remoteCsvUrl || dashboardData.importCsv.sampleFile;
+          var sourceLabel = dashboardData.importCsv.remoteCsvUrl ? "live Google Sheets CSV" : dashboardData.importCsv.sampleFile;
+          try {
+            var separator = source.indexOf("?") >= 0 ? "&" : "?";
+            var response = await fetch(source + separator + "v=" + Date.now());
+            if (!response.ok) throw new Error("CSV not available");
+            var text = await response.text();
+            var borrowers = normalizeCsvBorrowers(text);
+            if (borrowers.length) applyCsvBorrowers(borrowers, sourceLabel);
+          } catch (error) {
+            updateCsvStatus("Pipeline source: data.js mock data. Use Import CSV if you opened this file locally.");
+          }
+        }
+
+        function startCsvAutoRefresh() {
+          if (!dashboardData.importCsv.remoteCsvUrl) return;
+          var seconds = Math.max(30, Number(dashboardData.importCsv.refreshSeconds) || 60);
+          window.setInterval(tryAutoLoadCsv, seconds * 1000);
+        }
+
         function renderMetricGrid(rootId, items) {
           document.getElementById(rootId).innerHTML = items
             .map(function (item) {
@@ -1874,6 +1862,65 @@
                 escapeHtml(item[1]) +
                 "</strong><p>" +
                 escapeHtml(item[2]) +
+                "</p></article>"
+              );
+            })
+            .join("");
+        }
+
+        function renderHighestValueAction(action) {
+          document.getElementById("highestValueActionCard").innerHTML =
+            '<div><span class="label">Highest Value Action Today</span><h2 id="highest-value-title">' +
+            escapeHtml(action.title) +
+            "</h2><p>" +
+            escapeHtml(action.summary) +
+            '</p><div class="action-facts">' +
+            '<div class="fact"><span class="label">Contact</span><b>' +
+            escapeHtml(action.contact) +
+            '</b></div><div class="fact"><span class="label">Reason It Matters</span><b>' +
+            escapeHtml(action.reason) +
+            '</b></div><div class="fact"><span class="label">Suggested Action</span><b>' +
+            escapeHtml(action.suggestedAction) +
+            '</b></div><div class="fact"><span class="label">Potential Loan Amount</span><b>' +
+            escapeHtml(action.potentialLoanAmount) +
+            '</b></div><div class="fact"><span class="label">Estimated Commission</span><b>' +
+            escapeHtml(action.estimatedCommission) +
+            '</b></div><div class="fact"><span class="label">Priority Level</span><b><span class="' +
+            priorityClass(action.priority) +
+            '">' +
+            escapeHtml(action.priority) +
+            "</span></b></div></div></div>" +
+            '<div class="button-row"><button class="btn primary" type="button" data-complete-target="highest-value-title">Mark Complete</button>' +
+            '<button class="btn" type="button" data-toast="' +
+            escapeHtml(action.logMessage) +
+            '">Log Touch</button></div>';
+        }
+
+        function renderCsvImportPlaceholder(importCsv) {
+          document.getElementById("csvImportPlaceholder").innerHTML =
+            '<article class="panel-card import-card"><div><h3>' +
+            escapeHtml(importCsv.label) +
+            "</h3><p>" +
+            escapeHtml(importCsv.description) +
+            "</p><p>Future feature path: upload Encompass/CRM CSV to refresh pipeline. This local version now supports manual CSV upload and hosted auto-load.</p><p>Sample schema: " +
+            escapeHtml(importCsv.sourceColumns) +
+            '</p><p id="csvImportStatus">Pipeline source: data.js mock data. If hosted, the app will try to auto-load the sample CSV.</p></div><div class="button-row"><a class="btn" href="' +
+            escapeHtml(importCsv.sampleFile) +
+            '" download>Download Sample CSV</a><button class="btn primary" type="button" data-import-csv>' +
+            escapeHtml(importCsv.label) +
+            "</button></div></article>";
+        }
+
+        function renderIntegrationSettings(items) {
+          document.getElementById("integrationSettings").innerHTML = items
+            .map(function (item) {
+              return (
+                '<article class="panel-card"><h3>' +
+                escapeHtml(item.name) +
+                '</h3><span class="pill blue">' +
+                escapeHtml(item.status) +
+                "</span><p>" +
+                escapeHtml(item.description) +
                 "</p></article>"
               );
             })
@@ -2308,21 +2355,54 @@
           });
 
           document.querySelectorAll("[data-toast]").forEach(function (button) {
-            button.addEventListener("click", function () {
+            button.onclick = function () {
               var original = button.textContent;
               button.textContent = "Logged";
               window.setTimeout(function () {
                 button.textContent = original;
               }, 1200);
-            });
+            };
           });
 
-          document.getElementById("globalSearch").addEventListener("input", function (event) {
+          document.querySelectorAll("[data-import-csv]").forEach(function (button) {
+            button.onclick = function () {
+              var input = document.getElementById("pipelineCsvInput");
+              if (!input) {
+                input = document.createElement("input");
+                input.id = "pipelineCsvInput";
+                input.type = "file";
+                input.accept = ".csv,.txt,text/csv,text/tab-separated-values";
+                input.hidden = true;
+                document.body.appendChild(input);
+              }
+
+              input.onchange = function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+
+                var reader = new FileReader();
+                reader.onload = function () {
+                  var borrowers = normalizeCsvBorrowers(String(reader.result || ""));
+                  if (!borrowers.length) {
+                    updateCsvStatus("CSV import failed: no valid borrower rows found.");
+                    return;
+                  }
+                  applyCsvBorrowers(borrowers, file.name);
+                };
+                reader.readAsText(file);
+                input.value = "";
+              };
+
+              input.click();
+            };
+          });
+
+          document.getElementById("globalSearch").oninput = function (event) {
             var query = event.target.value.trim().toLowerCase();
             document.querySelectorAll("table tbody tr, .money-action, .kanban-card, .follow-card").forEach(function (node) {
               node.style.display = !query || node.textContent.toLowerCase().indexOf(query) >= 0 ? "" : "none";
             });
-          });
+          };
         }
 
         function updateDate() {
@@ -2339,6 +2419,8 @@
 
         function renderDashboard(data) {
           renderMetricGrid("scoreboardCards", data.scoreboard);
+          renderHighestValueAction(data.highestValueAction);
+          renderCsvImportPlaceholder(data.importCsv);
           renderPriorityScores(data.borrowers);
           renderMoneyActions(data.moneyActions);
           renderPipeline(data);
@@ -2355,11 +2437,14 @@
           renderPanelCards("financeCards", data.finance);
           renderQuickLinks(data.quickLinks);
           renderNotes(data);
+          renderIntegrationSettings(data.integrationSettings);
           bindInteractions();
           updateDate();
         }
 
         renderDashboard(dashboardData);
+        tryAutoLoadCsv();
+        startCsvAutoRefresh();
         window.setInterval(updateDate, 60000);
       })();
     </script>
