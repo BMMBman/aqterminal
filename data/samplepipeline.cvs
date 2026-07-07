@@ -1,0 +1,8 @@
+Name,Agent,Stage,LoanType,PurchasePrice,LoanAmount,Probability,EstimatedCommission,LastContact,NextAction,DueDate,Priority,Status,Notes
+Megan Kaled,Lindsay Strong,Shopping,Conventional,215000,204250,50,1327,5-Jun,Update payment scenario after showing,7/7/2026,Low,Needs call,Imported from working pipeline
+Alexys Wozniak,Gina Hammar,Pre-Approved,FHA,172000,168885,40,1097,3-Jun,Ask if they want updated numbers on listings,7/8/2026,Low,Warm,Imported from working pipeline
+Nathaniel Ploetz,Rylee Noonan,Processing,Conventional,225000,213750,90,1389,26-Jun,Ordering appraisal,7/7/2026,High,Needs call,Imported from working pipeline
+Shaylin Baker,Michele Tracy,Shopping,Conventional 20yr,320000,296000,65,1924,6-Jul,Hold pending inspection negotiation,7/9/2026,Medium,Overdue,Imported from working pipeline
+Lydia Alpert,Gina Hammar,Shopping,Conventional,145000,78000,64,507,2-Jul,Send first-time buyer checklist,7/12/2026,Medium,Nurture,Imported from working pipeline
+Thomas Staley,Jamie Mendel-Kolb,Shopping,Conventional,350000,315000,72,2047,1-Jul,Update payment scenario after showing,,Medium,Warm,
+Ishmael Delen,Liliya Dedovets,Shopping,Conventional,650000,420000,60,2730,25-Jun,Wait until July 17th to look at 4-unit,,High,Nurture,
